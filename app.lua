@@ -61,6 +61,14 @@ function Server.setup()
     server:listen(config.PORT, Server.handler)
 end
 
+function sendHeader(conn)
+     conn:send("HTTP/1.1 200 OK\r\n")
+     conn:send("Access-Control-Allow-Origin: *\r\n")
+     conn:send("Content-Type: application/json; charset=utf-8\r\n")
+     conn:send("Server:NodeMCU\r\n")
+     conn:send("Connection: close\r\n\r\n")
+end
+
 function Server.handler(conn)
     print("Server handler setup")
     -- conn:send('HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods", "PUT, POST, GET\r\nServer: ESP8266-1\r\n\n')
@@ -76,11 +84,8 @@ function Server.handler(conn)
         colours["blue"] = 0
         --colours["brightness"] = BRIGHTNESS
 
-        if (string.sub(payload, 1, 3) == "GET") then
-        -- if (string.sub(payload, 1, 4) == "POST") then
-            head = head .. "HTTP/1.1 200 OK\r\n"
-            head = head .. "Content-Type: application/json\r\n"
-            head = head .. "Access-Control-Allow-Origin: *\r\n"
+        if (string.sub(payload, 1, 4) == "POST") then
+            sendHeader(client)
             -- now we find the RGB components. Going to do this simply
             -- by ripping them out with a find statement
             for c, v in pairs(colours) do
@@ -93,19 +98,17 @@ function Server.handler(conn)
             set_led_colour(colours, NO_PIXELS)
 
             -- send the JSON back to confirm
-            -- body = body .. "{\"r\":" .. colours["red"] .. ", "
-            -- body = body .. "\"g\":" .. colours["green"] .. ", "
-            -- body = body .. "\"b\":" .. colours["blue"] .. "}"
+            body = body .. cjson.encode(colours)
         else
-            head = head .. "HTTP/1.1 500 Server Error\r\n"
-            body = body .. "Please ensure you use a POST method"
+            client:send("HTTP/1.1 500 Server Error\r\n")
+            body = body .. "{\"message\": \"Please ensure you use a POST method}\""
         end
 
-        body = body .. "\r\n" -- just tidy up the end of the file
-        head = head .. "Content-Length: " .. string.len(body) .. "\r\n\r\n"
+        client:send("Content-Length: " .. string.len(body) .. "\r\n\r\n")
 
+        body = body .. "\r\n" -- just tidy up the end of the file
         --print(head .. body)
-        client:send(head..body)
+        client:send(body)
      end)
 
      conn:on("sent", function(client)
