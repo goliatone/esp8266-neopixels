@@ -72,7 +72,7 @@ function updateHue() {
 
     // Create request (only XY set, what about brightness?)
     var request = {
-        "brightness": window.bri || 0.5,
+        "brightness": (window.bri || 0.5) * 10,
         "red": hueColour[0],
         "green": hueColour[1],
         "blue": hueColour[2],
@@ -84,7 +84,7 @@ function updateHue() {
     var jbulbs = request;
     console.log(jbulbs);
 
-    console.info("curl '%s' --data 'red=%s&green=%s&blue=%s' --compressed", urlstr, request.red, request.green, request.blue, request.brightness)
+    console.info("curl '%s' --data 'red=%s&green=%s&blue=%s' --compressed", lighthost, request.red, request.green, request.blue, request.brightness)
 
     // Hey Hue there, change for me please!
     $.ajax({
