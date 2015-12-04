@@ -1,7 +1,7 @@
 local LED_PIN = 2 -- GPIO 2
 local BRIGHTNESS = 0.6 -- NeoPixels are BRIGHT.
 
-NO_PIXELS = 12
+NO_PIXELS = 31
 colours = {}
 colours["red"] = 0
 colours["green"] = 0
@@ -43,6 +43,18 @@ function App.before_setup()
     set_led_colour(colours, NO_PIXELS)
 end
 
+function rPrint(s, l, i) -- recursive Print (structure, limit, indent)
+	l = (l) or 100; i = i or "";	-- default item limit, indent string
+	if (l<1) then print "ERROR: Item limit reached."; return l-1 end;
+	local ts = type(s);
+	if (ts ~= "table") then print (i,ts,s); return l-1 end
+	print (i,ts);           -- print "table"
+	for k,v in pairs(s) do  -- print "[KEY] VALUE"
+		l = rPrint(v, l, i.."\t["..tostring(k).."]");
+		if (l < 0) then break end
+	end
+	return l
+end
 
 Server = {}
 
@@ -93,7 +105,7 @@ function Server.handler(conn)
                 _, _, colours[c] = string.find(payload, match)
                 -- put in a catch here incase it goes nil
             end
-            print(colours)
+            rPrint(colours)
 
             set_led_colour(colours, NO_PIXELS)
 
