@@ -1,17 +1,18 @@
 local LED_PIN = 2 -- GPIO 2
-local BRIGHTNESS = 0.2 -- NeoPixels are BRIGHT.
+local BRIGHTNESS = 0.6 -- NeoPixels are BRIGHT.
 
 NO_PIXELS = 12
 colours = {}
 colours["red"] = 0
 colours["green"] = 0
 colours["blue"] = 0
+colours["brightness"] = 0.5
 
 --
-function create_colour(red, green, blue)
+function create_colour(red, green, blue, brightness)
+    brightness = brightness and brightness or BRIGHTNESS
      -- takes the colours and makes single value for writing to the LEDs
-     local colour = string.char(green * BRIGHTNESS, red * BRIGHTNESS, blue * BRIGHTNESS)
-     return colour
+     return string.char(green * brightness, red * brightness, blue * brightness)
 end
 
 function set_led_colour(colours, pixels)
@@ -21,7 +22,8 @@ function set_led_colour(colours, pixels)
     end
      -- takes the colour values and writes that to the number of pixels
      -- assmues a table colours{"red":val, "green":val, "blue":val}
-     ws2812.write(LED_PIN, create_colour(colours["red"], colours["green"], colours["blue"]):rep(pixels))
+     local colour = create_colour(colours["red"], colours["green"], colours["blue"], colours["brightness"]):rep(pixels)
+     ws2812.write(LED_PIN, colour)
 end
 
 local App = {}
@@ -45,6 +47,7 @@ end
 Server = {}
 
 function Server.setup()
+
     if server ~= nil then
         server.close()
     end
@@ -53,13 +56,14 @@ function Server.setup()
     print("----- CURL COMMAND -----")
     print("curl 'http://"..wifi.sta.getip().."' --data 'red=120&green=123&blue=234' --compressed")
     print("------------------------")
-    
+
     server = net.createServer(net.TCP)
     server:listen(config.PORT, Server.handler)
 end
 
 function Server.handler(conn)
     print("Server handler setup")
+    -- conn:send('HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods", "PUT, POST, GET\r\nServer: ESP8266-1\r\n\n')
     conn:on("receive", function(client, payload)
 
         print(payload)
@@ -70,15 +74,17 @@ function Server.handler(conn)
         colours["red"] = 0
         colours["green"] = 0
         colours["blue"] = 0
+        --colours["brightness"] = BRIGHTNESS
 
-        if (string.sub(payload, 1, 4) == "POST") then
+        if (string.sub(payload, 1, 3) == "GET") then
+        -- if (string.sub(payload, 1, 4) == "POST") then
             head = head .. "HTTP/1.1 200 OK\r\n"
             head = head .. "Content-Type: application/json\r\n"
+            head = head .. "Access-Control-Allow-Origin: *\r\n"
             -- now we find the RGB components. Going to do this simply
             -- by ripping them out with a find statement
             for c, v in pairs(colours) do
                 local match = c .. "=(%d*)"
-                print(c, match, string.find(payload, match))
                 _, _, colours[c] = string.find(payload, match)
                 -- put in a catch here incase it goes nil
             end
