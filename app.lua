@@ -1,5 +1,5 @@
 local LED_PIN = 2 -- GPIO 2
-local BRIGHTNESS = 0.6 -- NeoPixels are BRIGHT.
+local BRIGHTNESS = 6 -- NeoPixels are BRIGHT.
 
 NO_PIXELS = 31
 colours = {}
@@ -11,6 +11,7 @@ colours["brightness"] = 0.5
 --
 function create_colour(red, green, blue, brightness)
     brightness = brightness and brightness or BRIGHTNESS
+    brightness = brightness / 10
      -- takes the colours and makes single value for writing to the LEDs
      return string.char(green * brightness, red * brightness, blue * brightness)
 end
@@ -94,7 +95,7 @@ function Server.handler(conn)
         colours["red"] = 0
         colours["green"] = 0
         colours["blue"] = 0
-        --colours["brightness"] = BRIGHTNESS
+        colours["brightness"] = BRIGHTNESS
 
         if (string.sub(payload, 1, 4) == "POST") then
             sendHeader(client)
